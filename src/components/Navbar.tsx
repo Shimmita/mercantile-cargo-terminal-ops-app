@@ -6,23 +6,40 @@ import LogoImg from "../assets/logo.png";
 const Navbar = () => {
   const [scrolled, setScrolled] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
+  const [isHidden, setIsHidden] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
+    
+    // Observer to hide navbar when modal is open
+    const observer = new MutationObserver(() => {
+      const isModalOpen = document.body.style.overflow === 'hidden';
+      setIsHidden(isModalOpen);
+    });
+
+    observer.observe(document.body, { attributes: true, attributeFilter: ['style'] });
     window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
+    
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      observer.disconnect();
+    };
   }, []);
 
-  // Helper to scroll to top
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
     setIsOpen(false);
   };
 
   return (
-    <nav className="fixed top-0 w-full z-[100] px-4 md:px-6 py-4">
+    <motion.nav 
+      // This logic slides the navbar up 100% when a modal is open
+      animate={{ y: isHidden ? -120 : 0 }}
+      transition={{ duration: 0.4, ease: "easeInOut" }}
+      className="fixed top-0 w-full z-[100] px-4 md:px-6 py-4 pointer-events-none"
+    >
       <motion.div 
-        className={`max-w-7xl mx-auto flex justify-between items-center px-6 py-2 rounded-xl transition-all duration-500 border ${
+        className={`max-w-7xl mx-auto flex justify-between items-center px-6 py-2 rounded-xl transition-all duration-500 border pointer-events-auto ${
           scrolled || isOpen
             ? "bg-slate-900/90 backdrop-blur-md border-white/10 shadow-xl" 
             : "bg-transparent border-transparent"
@@ -42,7 +59,7 @@ const Navbar = () => {
             />
           </div>
           <div className="flex flex-col">
-            <span className="text-white font-bold text-lg leading-none tracking-tight">MCTO</span>
+            <span className="text-white font-bold text-lg leading-none tracking-tight uppercase">MCTO</span>
             <span className="hidden md:block text-[10px] text-slate-400 font-medium uppercase tracking-wider mt-1 group-hover:text-blue-400 transition-colors">
               Mercantile Cargo Terminal Operations Ltd
             </span>
@@ -61,7 +78,7 @@ const Navbar = () => {
               <span className="absolute -bottom-1 left-0 w-0 h-[2px] bg-blue-500 transition-all duration-300 group-hover:w-full"></span>
             </a>
           ))}
-          <button className="bg-blue-600 text-white px-5 py-2.5 rounded-lg text-xs font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-900/20 active:scale-95">
+          <button className="bg-blue-600 text-white px-5 py-2.5 rounded-lg text-xs font-bold hover:bg-blue-700 transition-all shadow-lg active:scale-95">
             Operations
           </button>
         </div>
@@ -74,12 +91,12 @@ const Navbar = () => {
 
       {/* Mobile Menu Overlay */}
       <AnimatePresence>
-        {isOpen && (
+        {isOpen && !isHidden && (
           <motion.div 
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className="md:hidden mt-2 mx-auto max-w-[95%] bg-slate-900 border border-white/10 rounded-xl shadow-2xl overflow-hidden"
+            className="md:hidden mt-2 mx-auto max-w-[95%] bg-slate-900 border border-white/10 rounded-xl shadow-2xl overflow-hidden pointer-events-auto"
           >
             <div className="flex flex-col p-6 gap-6">
               {["Home", "Services", "About", "Contact"].map((item) => (
@@ -92,14 +109,11 @@ const Navbar = () => {
                   {item}
                 </a>
               ))}
-              <button className="w-full bg-blue-600 text-white py-4 rounded-xl font-bold uppercase tracking-widest text-xs">
-                Operations Desk
-              </button>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
-    </nav>
+    </motion.nav>
   );
 };
 
